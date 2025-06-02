@@ -33,17 +33,18 @@ function Game() {
       this.load.image("cannonball", "/assets/cannonball.png");
       this.load.image("bomb", "/assets/bomb.png");
       this.load.image("water", "/assets/water-loop.png");
-
-      // 🎵 Lyd
-      this.load.audio("bgmusic", "/assets/bg-music.mp3");
-
+      this.load.image("explosion", "/assets/explosion.png"); // 💥
+      this.load.audio("bgmusic", "/assets/bg-music.mp3");     // 🎵
     }
 
     function create() {
       water = this.add.tileSprite(0, 0, 800, 600, "water").setOrigin(0, 0);
 
-      boat = this.physics.add.sprite(100, 300, "boat").setScale(0.3);
+      // 🚢 Båt
+      boat = this.physics.add.sprite(100, 300, "boat").setScale(0.2);
       boat.setCollideWorldBounds(true);
+      boat.body.setSize(boat.width * 0.8, boat.height * 0.8);
+      boat.setOffset(10, 10);
 
       cannonballs = this.physics.add.group();
       bombs = this.physics.add.group();
@@ -56,7 +57,6 @@ function Game() {
         fill: "#fff"
       });
 
-      // 🏆 Highscore fra localStorage
       const savedHigh = localStorage.getItem("pirateHighscore") || 0;
       highScoreText = this.add.text(16, 40, `Highscore: ${savedHigh}`, {
         fontSize: "18px",
@@ -87,6 +87,11 @@ function Game() {
 
       tryAgainText.on("pointerdown", restartGame);
 
+      // 🎵 Bakgrunnsmusikk
+      music = this.sound.add("bgmusic", { loop: true, volume: 0.4 });
+      music.play();
+
+      // 💣 Bombe
       this.time.addEvent({
         delay: 2000,
         callback: spawnBomb,
@@ -96,10 +101,6 @@ function Game() {
 
       this.physics.add.collider(cannonballs, bombs, destroyBomb, null, this);
       this.physics.add.collider(bombs, boat, gameOver, null, this);
-
-      // 🎵 Spill musikk
-      music = this.sound.add("bgmusic", { loop: true, volume: 0.4 });
-      music.play();
     }
 
     function update() {
@@ -129,7 +130,8 @@ function Game() {
     }
 
     function spawnBomb() {
-      const bomb = bombs.create(800, Phaser.Math.Between(100, 550), "bomb").setScale(0.1);
+      const bomb = bombs.create(800, Phaser.Math.Between(100, 550), "bomb").setScale(0.08);
+      bomb.body.setCircle(20);
       bomb.setVelocityX(-200);
     }
 
@@ -154,8 +156,12 @@ function Game() {
       gameOverText.setVisible(true);
       tryAgainText.setVisible(true);
 
-      // 🔇 Stopp musikken
-      music.stop();
+      // 💥 Eksplosjon og risting
+      this.add.image(boat.x, boat.y, "explosion").setScale(0.3);
+      this.cameras.main.shake(500, 0.01);
+
+      // 🔇 Stopp musikk
+      if (music && music.isPlaying) music.stop();
     }
 
     function restartGame() {
